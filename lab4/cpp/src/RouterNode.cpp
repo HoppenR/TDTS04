@@ -121,7 +121,7 @@ void RouterNode::sendUpdate(RouterPacket& pkt) {
 //--------------------------------------------------
 
 void RouterNode::printDistanceTable() {
-    // Use a string builder to avoid expensive myGUI::print calls
+    // Use a string builder to avoid expensive myGUI.print calls
     ostringstream stringBuilder;
     stringBuilder << "Current state for " << myID << " at time " << std::fixed
                   << setprecision(1) << sim->getClockTime() << "\n\n";

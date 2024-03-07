@@ -13,8 +13,8 @@ GuiTextArea::GuiTextArea(string const& title)
     font.setStyleHint(QFont::Monospace);
     textedit->setFont(font);
     textedit->setReadOnly(true);
-    textedit->setUndoRedoEnabled(false);
     myGUI->setCentralWidget(textedit);
+    myGUI->setFixedSize(300, 600);
     myGUI->setWindowTitle(QString::fromStdString(title));
     myGUI->show();
 }
