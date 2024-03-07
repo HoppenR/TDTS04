@@ -11,7 +11,6 @@ LDFLAGS := $(shell pkg-config --libs Qt5Widgets)
 
 SRCDIR := src
 OBJDIR := obj
-BINDIR := bin
 
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SOURCES))

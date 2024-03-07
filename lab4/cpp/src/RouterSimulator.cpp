@@ -25,8 +25,7 @@
  * ***************************************************************************/
 
 /* It's better to NOT change the variables here, but instead use command
- * line arguments (see above) to configure each simulation.
- */
+ * line arguments (see above) to configure each simulation. */
 long RouterSimulator::SEED = 1234;
 int RouterSimulator::TRACE = 3;
 int RouterSimulator::NUM_NODES = 3;
@@ -37,8 +36,7 @@ bool RouterSimulator::POISONREVERSE = true;
  * int const RouterSimulator::INFINITY = 999;
  * GuiTextArea RouterSimulator::myGUI;
  * vector<RouterNode> RouterSimulator::nodes;
- * vector<vector<int>> RouterSimulator::connectcosts;
- */
+ * vector<vector<int>> RouterSimulator::connectcosts; */
 
 /* **********************************************************************
  * *************** NETWORK EMULATION CODE STARTS BELOW ******************
