@@ -1,0 +1,7 @@
+.cache
+.clang-format
+RouterSimulator
+__pycache__
+a.out
+compile_commands.json
+obj/
