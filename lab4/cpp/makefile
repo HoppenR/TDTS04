@@ -4,8 +4,6 @@ CC := g++
 CXXFLAGS += -std=c++17
 CXXFLAGS += -Iinclude
 CXXFLAGS += -fPIC
-CXXFLAGS += -Wall
-CXXFLAGS += -Wextra
 CXXFLAGS += $(shell pkg-config --cflags Qt5Widgets)
 LDFLAGS := $(shell pkg-config --libs Qt5Widgets)
 
