@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import F
 from RouterPacket import RouterPacket
 from GuiTextArea import GuiTextArea
 from RouterSimulator import RouterSimulator
