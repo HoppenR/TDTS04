@@ -25,12 +25,14 @@ public:
 private:
     void sendUpdate(RouterPacket&);
     void updateDistanceCosts();
-    void notifyNeighbors(int* = nullptr);
+    void notifyNetwork(int* = nullptr);
 
     GuiTextArea myGUI;
     RouterSimulator* sim;
     int myID;
     std::vector<int> costs;
+
+    // Member variables added that are not in the original lab template:
     std::vector<std::vector<int>> distances;
     std::vector<std::string> routes;
 };

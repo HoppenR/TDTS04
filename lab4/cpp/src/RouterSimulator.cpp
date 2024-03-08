@@ -21,7 +21,16 @@
  * -t --trace            1, 2, 3, 4          Debugging levels
  *
  * This is a C++ version by chrlu470 of code provided by Kurose and Ross.
+ * Almost all of the code design and comments are taken from their code.
  *
+ * This version strives to stay as close as possible to the original Java and
+ * Python code with a few differences:
+ *   - Windowing system is initialized in RouterSimulator::main
+ *   - Events and packets need to be `delete`d from the heap since C++ does not
+ *     have garbage collection.
+ *   - Long option "--poison" is now called "--poisonreverse"
+ *
+ * Entry point: RouterSimulator::main(argc, argv)
  * ***************************************************************************/
 
 /* It's better to NOT change the variables here, but instead use command
@@ -31,15 +40,8 @@ int RouterSimulator::TRACE = 3;
 int RouterSimulator::NUM_NODES = 3;
 bool RouterSimulator::LINKCHANGES = true;
 bool RouterSimulator::POISONREVERSE = true;
-/* Other variables of interest defined in RouterSimulator:
- *
- * int const RouterSimulator::INFINITY = 999;
- * GuiTextArea RouterSimulator::myGUI;
- * vector<RouterNode> RouterSimulator::nodes;
- * vector<vector<int>> RouterSimulator::connectcosts; */
 
-/* **********************************************************************
- * *************** NETWORK EMULATION CODE STARTS BELOW ******************
+/* *************** NETWORK EMULATION CODE STARTS BELOW ******************
  * The code below emulates the layer 2 and below network environment:
  *   - emulates the transmission and delivery (with no loss and no
  *     corruption) between two physically connected nodes
@@ -56,13 +58,13 @@ bool RouterSimulator::POISONREVERSE = true;
 using namespace std;
 
 void RouterSimulator::main(int argc, char* argv[]) {
-    // Initialize the window system Qt for the window system
+    // Initialize the window system Qt5
     QApplication app{ argc, argv };
     RouterSimulator::initialize(argc, argv);
     srand(RouterSimulator::SEED);
     RouterSimulator sim{};
     sim.runSimulation();
-    // Display windows
+    // Display windows until student exits them
     app.exec();
 }
 
@@ -145,8 +147,8 @@ RouterSimulator::RouterSimulator()
         } break;
         case 4:
         case 5: {
-            evptr = new Event{};
             connectcosts[0][1] = 1;
+            evptr = new Event{};
             evptr->evtime = 10000.0;
             evptr->evtype = LINK_CHANGE;
             evptr->eventity = 0;
@@ -180,7 +182,6 @@ void RouterSimulator::runSimulation() {
         if (eventptr == nullptr) {
             break;
         }
-        // get next event to simulate
         evlist = evlist->next;
         // remove this event from event list
         if (evlist != nullptr) {
@@ -190,9 +191,9 @@ void RouterSimulator::runSimulation() {
             myGUI.println("MAIN: rcv event, t=" + to_string(eventptr->evtime) +
                           " at " + to_string(eventptr->eventity));
             if (eventptr->evtype == FROM_LAYER2) {
-                myGUI.print(" src:" + to_string(eventptr->rtpktptr->sourceid));
-                myGUI.print(" dest:" + to_string(eventptr->rtpktptr->destid));
-                myGUI.print(", contents:");
+                myGUI.print(" src:" + to_string(eventptr->rtpktptr->sourceid) +
+                            " dest:" + to_string(eventptr->rtpktptr->destid) +
+                            ", contents:");
                 for (int i = 0; i < RouterSimulator::NUM_NODES; i++) {
                     myGUI.print(" " +
                                 to_string(eventptr->rtpktptr->mincost[i]));
@@ -241,9 +242,9 @@ double RouterSimulator::getClockTime() {
     return clocktime;
 }
 
-/* ******************** EVENT HANDLINE ROUTINES ********
- *   The next set of routines handle the event list    *
- * ****************************************************/
+/* ******************** EVENT HANDLING ROUTINES ********************
+ *         The next set of routines handle the event list          *
+ * ****************************************************************/
 
 void RouterSimulator::insertevent(Event* p) {
     if (RouterSimulator::TRACE > 3) {
@@ -371,6 +372,8 @@ void RouterSimulator::initialize(int argc, char* argv[]) {
         { nullptr, 0, nullptr, 0 }
     };
 
+    // Create a helper lambda for checking boolean options.
+    // Uses the global variable `optarg` from <getopt.h>
     const vector<string> affirmative = { "true", "1", "y", "yes", "t" };
     const vector<string> negative = { "false", "0", "n", "no", "f" };
     auto opt_is = [](vector<string> const& type) {

@@ -8,35 +8,43 @@
 
 using namespace std;
 
-/* You can access command line values via the router simulator
- * example: RouterSimulator::POISONREVERSE,
- *
- * and also constants via the `sim` pointer
- * example: sim->INFINITY */
-
+/*
+ * Initialize the RouterNode.
+ * Also synchronize the base costs on the network before the first LINK_CHANGE
+ * event by using the notifyNeighbors method.
+ */
 RouterNode::RouterNode(int ID, RouterSimulator* sim, vector<int> const& costs)
     : myGUI{ "  Output window for router #" + to_string(ID) + "  " },
       sim{ sim }, myID{ ID }, costs{ costs },
       distances(sim->NUM_NODES, vector<int>(sim->NUM_NODES, sim->INFINITY)),
       routes(sim->NUM_NODES, "-") {
 
-    // Init distances and routes info
+    // Init distances and routes info.
     distances[myID] = costs;
     for (int i = 0; i < sim->NUM_NODES; i++) {
         if (costs[i] != sim->INFINITY) {
             routes[i] = to_string(i);
         }
     }
-    notifyNeighbors();
+
+    // Notify the network about the starting costs of this node, without
+    // poisoning any data.
+    notifyNetwork();
 }
 
-//--------------------------------------------------
-
+/*
+ * Recalculate the distance costs to all destinations for this node by using:
+ * min{ cost(x -> y) + distance(y -> destination) }
+ * where x is ourselves and y is any adjacent neighbor.
+ */
 void RouterNode::updateDistanceCosts() {
     for (int target = 0; target < sim->NUM_NODES; target++) {
         if (target == myID) {
             continue;
         }
+        // Calculate all possible routes so that we can find the one with lowest
+        // cost.
+        // For each cost: save the first hop at the same index in nextHop.
         vector<int> nextRoutes;
         vector<int> nextHop;
         nextRoutes.reserve(sim->NUM_NODES);
@@ -45,18 +53,16 @@ void RouterNode::updateDistanceCosts() {
             if (next == myID) {
                 continue;
             }
-            if (distances[next].size() <= target) {
-                continue;
-            }
             nextRoutes.push_back(costs[next] + distances[next][target]);
             nextHop.push_back(next);
         }
+        // Find the minimum cost possible, and its corresponding first hop.
         int minCost = sim->INFINITY;
         int minHopID;
-        for (size_t next = 0; next < nextRoutes.size(); next++) {
-            if (nextRoutes[next] < minCost) {
-                minCost = nextRoutes[next];
-                minHopID = nextHop[next];
+        for (size_t i = 0; i < nextRoutes.size(); i++) {
+            if (nextRoutes[i] < minCost) {
+                minCost = nextRoutes[i];
+                minHopID = nextHop[i];
             }
         }
         this->distances[myID][target] = minCost;
@@ -64,62 +70,58 @@ void RouterNode::updateDistanceCosts() {
     }
 }
 
-//--------------------------------------------------
-
-void RouterNode::notifyNeighbors(int* fakeindex) {
-    if (!sim->POISONREVERSE) {
-        for (int neighborID = 0; neighborID < sim->NUM_NODES; neighborID++) {
-            if (neighborID == myID) {
-                continue;
-            }
-            RouterPacket pkt{
-                myID,
-                neighborID,
-                distances[myID],
-            };
-            sendUpdate(pkt);
+/*
+ * Send our distances to the entire network
+ * If POISONREVERSE is true then we should send INFINITY to any node that we are
+ * connected to.
+ * `fakeindex` defaults to a null pointer.
+ */
+void RouterNode::notifyNetwork(int* fakeidx) {
+    for (int target = 0; target < sim->NUM_NODES; target++) {
+        // Prepare a vector that we might need to add poisoned data to
+        vector<int> sendvector = distances[myID];
+        if (sim->POISONREVERSE && fakeidx != nullptr && target != *fakeidx) {
+            sendvector[*fakeidx] = sim->INFINITY;
         }
-    } else {
-        vector<int> fakevector = distances[myID];
-        if (fakeindex != nullptr) {
-            fakevector[*fakeindex] = sim->INFINITY;
+        if (target == myID) {
+            continue;
         }
-        for (int neighborID = 0; neighborID < sim->NUM_NODES; neighborID++) {
-            if (neighborID == myID) {
-                continue;
-            }
-            if (costs[neighborID] == sim->INFINITY) {
-                continue;
-            }
-            RouterPacket pkt{
-                myID,
-                neighborID,
-                fakevector,
-            };
-            sendUpdate(pkt);
+        if (costs[target] == sim->INFINITY) {
+            continue;
         }
+        RouterPacket pkt{
+            myID,
+            target,
+            sendvector,
+        };
+        sendUpdate(pkt);
     }
 }
 
-//--------------------------------------------------
-
+/*
+ * When an update is received, update our distance costs and propagate any
+ * updated costs, if there is no change, don't propagate.
+ */
 void RouterNode::recvUpdate(RouterPacket& pkt) {
     distances[pkt.sourceid] = pkt.mincost;
     vector<vector<int>> oldDistances = distances;
     updateDistanceCosts();
     if (oldDistances != distances) {
-        notifyNeighbors();
+        // Send a regular update to the network, without poisoning any data.
+        notifyNetwork();
     }
 }
 
-//--------------------------------------------------
-
+/*
+ * Send a prepared packet to the simulator.
+ */
 void RouterNode::sendUpdate(RouterPacket& pkt) {
     sim->toLayer2(pkt);
 }
 
-//--------------------------------------------------
-
+/*
+ * Format and print state info about this router node.
+ */
 void RouterNode::printDistanceTable() {
     // Use a string builder to avoid expensive myGUI.print calls
     ostringstream stringBuilder;
@@ -175,10 +177,14 @@ void RouterNode::printDistanceTable() {
     myGUI.println(stringBuilder.str());
 }
 
-//--------------------------------------------------
-
+/*
+ * Set a new link cost for this node to another node.
+ * Since this might cause an update in distance costs when POISONREVERSE is
+ * true, pass the destination node ID to notifyNetwork so that it can prepare
+ * poisoned information to its neighbors.
+ */
 void RouterNode::updateLinkCost(int dest, int newcost) {
     costs[dest] = newcost;
     updateDistanceCosts();
-    notifyNeighbors(&dest);
+    notifyNetwork(&dest);
 }

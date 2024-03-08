@@ -45,8 +45,6 @@ class RouterNode():
             for next in range(self.sim.NUM_NODES):
                 if next == self.myID:
                     continue
-                if len(self.distances[next]) <= target:
-                    continue
                 nextRoutes.append(
                     self.costs[next] + self.distances[next][target],
                 )

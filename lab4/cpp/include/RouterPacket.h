@@ -4,12 +4,10 @@
 
 class RouterPacket {
 public:
-    // Allow students to access all constructors
-    // to avoid any confusion
-    RouterPacket(const RouterPacket&) = default;
-    RouterPacket(RouterPacket&&) = default;
-    RouterPacket& operator=(const RouterPacket&) = default;
-    RouterPacket& operator=(RouterPacket&&) = default;
+    RouterPacket(const RouterPacket&) = delete;
+    RouterPacket(RouterPacket&&) = delete;
+    RouterPacket& operator=(const RouterPacket&) = delete;
+    RouterPacket& operator=(RouterPacket&&) = delete;
 
     RouterPacket(int, int, std::vector<int>);
     RouterPacket* clone() const;
