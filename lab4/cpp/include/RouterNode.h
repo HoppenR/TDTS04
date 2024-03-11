@@ -12,7 +12,7 @@ class RouterSimulator;
 class RouterNode {
 public:
     RouterNode(const RouterNode&) = delete;
-    // std::vector requires RouterNode to be move-constructible
+    // std::vector<RouterNode> in RouterSimulator.h requires move constructor
     RouterNode(RouterNode&&) = default;
     RouterNode& operator=(const RouterNode&) = delete;
     RouterNode& operator=(RouterNode&&) = delete;
@@ -24,15 +24,15 @@ public:
 
 private:
     void sendUpdate(RouterPacket&);
-    void updateDistanceCosts();
-    void notifyNetwork(int* = nullptr);
 
     GuiTextArea myGUI;
     RouterSimulator* sim;
     int myID;
     std::vector<int> costs;
 
-    // Member variables added that are not in the original lab template:
+    // Variables + methods not in the original lab template:
+    void updateDistanceCosts();
+    void notifyNetwork(int* = nullptr);
     std::vector<std::vector<int>> distances;
     std::vector<std::string> routes;
 };

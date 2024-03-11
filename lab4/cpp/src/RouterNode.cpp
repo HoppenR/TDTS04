@@ -11,7 +11,7 @@ using namespace std;
 /*
  * Initialize the RouterNode.
  * Also synchronize the base costs on the network before the first LINK_CHANGE
- * event by using the notifyNeighbors method.
+ * event by using the notifyNetwork method.
  */
 RouterNode::RouterNode(int ID, RouterSimulator* sim, vector<int> const& costs)
     : myGUI{ "  Output window for router #" + to_string(ID) + "  " },
@@ -27,8 +27,7 @@ RouterNode::RouterNode(int ID, RouterSimulator* sim, vector<int> const& costs)
         }
     }
 
-    // Notify the network about the starting costs of this node, without
-    // poisoning any data.
+    // Notify the network about the starting costs of this node
     notifyNetwork();
 }
 
@@ -42,31 +41,31 @@ void RouterNode::updateDistanceCosts() {
         if (target == myID) {
             continue;
         }
-        // Calculate all possible routes so that we can find the one with lowest
-        // cost.
-        // For each cost: save the first hop at the same index in nextHop.
-        vector<int> nextRoutes;
-        vector<int> nextHop;
-        nextRoutes.reserve(sim->NUM_NODES);
-        nextHop.reserve(sim->NUM_NODES);
+        // Calculate all possible routes so that we can find the cheapest one.
+        // For each cost: save the first hop at the same index.
+        vector<int> targetRoutes;
+        vector<int> targetFirstHops;
+        targetRoutes.reserve(sim->NUM_NODES);
+        targetFirstHops.reserve(sim->NUM_NODES);
         for (int next = 0; next < sim->NUM_NODES; next++) {
             if (next == myID) {
                 continue;
             }
-            nextRoutes.push_back(costs[next] + distances[next][target]);
-            nextHop.push_back(next);
+            targetRoutes.push_back(costs[next] + distances[next][target]);
+            targetFirstHops.push_back(next);
         }
         // Find the minimum cost possible, and its corresponding first hop.
         int minCost = sim->INFINITY;
-        int minHopID;
-        for (size_t i = 0; i < nextRoutes.size(); i++) {
-            if (nextRoutes[i] < minCost) {
-                minCost = nextRoutes[i];
-                minHopID = nextHop[i];
+        int minFirstHopID;
+        for (size_t i = 0; i < targetRoutes.size(); i++) {
+            if (targetRoutes[i] < minCost) {
+                minCost = targetRoutes[i];
+                minFirstHopID = targetFirstHops[i];
             }
         }
         this->distances[myID][target] = minCost;
-        this->routes[target] = to_string(minHopID);
+        // Set the route info for informative printing
+        this->routes[target] = to_string(minFirstHopID);
     }
 }
 
@@ -92,7 +91,7 @@ void RouterNode::notifyNetwork(int* fakeidx) {
         RouterPacket pkt{
             myID,
             target,
-            sendvector,
+            std::move(sendvector),
         };
         sendUpdate(pkt);
     }
@@ -180,11 +179,11 @@ void RouterNode::printDistanceTable() {
 /*
  * Set a new link cost for this node to another node.
  * Since this might cause an update in distance costs when POISONREVERSE is
- * true, pass the destination node ID to notifyNetwork so that it can prepare
- * poisoned information to its neighbors.
+ * true
  */
 void RouterNode::updateLinkCost(int dest, int newcost) {
     costs[dest] = newcost;
     updateDistanceCosts();
+    // Pass what node ID to poison data about, if POISONREVERSE is true
     notifyNetwork(&dest);
 }

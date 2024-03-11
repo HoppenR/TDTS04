@@ -26,8 +26,8 @@
  * This version strives to stay as close as possible to the original Java and
  * Python code with a few differences:
  *   - Windowing system is initialized in RouterSimulator::main
- *   - Events and packets need to be `delete`d from the heap since C++ does not
- *     have garbage collection.
+ *   - Events and packets are `delete`d from the heap in
+ *     RouterSimulator::runSimulation since C++ does not have garbage collection.
  *   - Long option "--poison" is now called "--poisonreverse"
  *
  * Entry point: RouterSimulator::main(argc, argv)
@@ -355,8 +355,7 @@ void RouterSimulator::toLayer2(RouterPacket& packet) {
 }
 
 void RouterSimulator::initialize(int argc, char* argv[]) {
-    string inputInfo = "./RouterSimulator "
-                       "-c, --change <LINKCHANGE (bool)> "
+    string inputInfo = "-c, --change <LINKCHANGE (bool)> "
                        "-n, --nodes <NODES (int)> "
                        "-p, --poisonreverse <POISONREVERSE (bool)> "
                        "-s, --seed <SEED (long)> "
@@ -409,13 +408,13 @@ void RouterSimulator::initialize(int argc, char* argv[]) {
                 RouterSimulator::TRACE = stoi(optarg);
             } break;
             default: {
-                cerr << inputInfo;
+                cerr << argv[0] << inputInfo;
                 exit(EXIT_FAILURE);
             } break;
             }
         }
     } catch (invalid_argument&) {
-        cerr << inputInfo << endl;
+        cerr << argv[0] << inputInfo << endl;
         exit(2);
     }
 }
