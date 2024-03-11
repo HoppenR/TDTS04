@@ -17,7 +17,7 @@ GuiTextArea::GuiTextArea(string const& title)
     textedit->setFont(font);
     textedit->setReadOnly(true);
     myGUI->setCentralWidget(textedit);
-    myGUI->setFixedSize(600, 600);
+    myGUI->setMinimumSize(600, 600);
     myGUI->setWindowTitle(QString::fromStdString(title));
     myGUI->show();
 }

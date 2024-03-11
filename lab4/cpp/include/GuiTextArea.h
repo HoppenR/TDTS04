@@ -7,7 +7,7 @@
 class GuiTextArea {
 public:
     GuiTextArea(const GuiTextArea&) = delete;
-    // RouterNode requires GuiTextArea to have a move constructor
+    // RouterNode requires its GuiTextArea instance to have a move constructor
     GuiTextArea(GuiTextArea&&) = default;
     GuiTextArea& operator=(const GuiTextArea&) = delete;
     GuiTextArea& operator=(GuiTextArea&&) = delete;
